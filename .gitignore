@@ -1,0 +1,24 @@
+# OS
+.DS_Store
+
+# Node
+node_modules/
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+
+# Go
+*.exe
+*.test
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Cursor
+*.plan.md
