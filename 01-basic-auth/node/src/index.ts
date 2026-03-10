@@ -2,9 +2,11 @@
  * Entry point (Node.js / TypeScript).
  *
  * Здесь мы:
- * - создаём зависимости (Repository → UseCase → Delivery)
- * - подключаем middleware Basic Auth к защищённым роутам
+ * - создаём зависимости: Repository → UseCase → Delivery
+ * - регистрируем маршруты
  * - поднимаем HTTP сервер на порту 8080
+ *
+ * BasicAuth middleware удалён — авторизация выполняется через тело запроса.
  */
 import express from 'express';
 import fs from 'node:fs';
@@ -12,26 +14,27 @@ import path from 'node:path';
 import { MemoryUserRepository } from './repository/memoryUserRepository';
 import { AuthUsecase } from './usecase/authUsecase';
 import { createAuthHandler } from './delivery/authHandler';
-import { basicAuthMiddleware } from './delivery/middleware/basicAuth';
 
 const userRepository = new MemoryUserRepository();
 const authUsecase = new AuthUsecase(userRepository);
 const authHandler = createAuthHandler(authUsecase);
-const basicAuth = basicAuthMiddleware(authUsecase);
 
 const app = express();
 app.use(express.json());
 
+// GET /health — проверка работоспособности сервера
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
+// GET /openapi.json — отдаёт OpenAPI спецификацию из файла
 app.get('/openapi.json', (_req, res) => {
   const specPath = path.join(process.cwd(), 'openapi.json');
   const data = fs.readFileSync(specPath, 'utf-8');
   res.type('application/json').send(data);
 });
 
+// GET /swagger — Swagger UI (HTML-страница)
 app.get('/swagger', (_req, res) => {
   res.type('text/html').send(`<!doctype html>
 <html>
@@ -53,11 +56,13 @@ app.get('/swagger', (_req, res) => {
 </html>`);
 });
 
+// Публичные маршруты — не требуют авторизации
 app.post('/api/v1/auth/register', authHandler.register);
-app.get('/api/v1/auth/me', basicAuth, authHandler.me);
-app.delete('/api/v1/auth/me', basicAuth, authHandler.deleteUser);
+app.post('/api/v1/auth/login', authHandler.login);
+app.delete('/api/v1/auth/delete', authHandler.deleteByCredentials);
 
 const PORT = 8080;
 app.listen(PORT, () => {
   console.log(`Basic Auth server (Node/TypeScript) running on http://localhost:${PORT}`);
+  console.log(`Swagger UI: http://localhost:${PORT}/swagger`);
 });

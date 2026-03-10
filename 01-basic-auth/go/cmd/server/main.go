@@ -4,11 +4,10 @@ package main
 //
 // Здесь мы:
 // - собираем зависимости (Repository → UseCase → Delivery)
-// - подключаем middleware Basic Auth к защищённым роутам
+// - настраиваем маршруты /register, /login, /delete (JSON тело запроса)
 // - поднимаем HTTP-сервер и делаем graceful shutdown
 import (
 	"basic-auth/internal/delivery"
-	"basic-auth/internal/delivery/middleware"
 	"basic-auth/internal/repository/memory"
 	"basic-auth/internal/usecase"
 	"context"
@@ -87,20 +86,16 @@ func main() {
 	// 3) HTTP handlers (Delivery слой)
 	authHandler := delivery.NewAuthHandler(authUsecase)
 
-	// 4) Middleware, которое будет проверять заголовок Authorization: Basic ...
-	basicAuthMiddleware := middleware.BasicAuth(authUsecase)
-
 	mux := http.NewServeMux()
 
 	// Public routes
 	mux.HandleFunc("/health", healthHandler)
 	mux.HandleFunc("/swagger", swaggerUIHandler)
+	mux.HandleFunc("/swagger/", swaggerUIHandler)
 	mux.HandleFunc("/openapi.json", openAPIHandler)
 	mux.HandleFunc("POST /api/v1/auth/register", authHandler.RegisterHandler)
-
-	// Protected routes (require Basic Auth header)
-	mux.Handle("GET /api/v1/auth/me", basicAuthMiddleware(http.HandlerFunc(authHandler.MeHandler)))
-	mux.Handle("DELETE /api/v1/auth/me", basicAuthMiddleware(http.HandlerFunc(authHandler.DeleteUserHandler)))
+	mux.HandleFunc("POST /api/v1/auth/login", authHandler.LoginHandler)
+	mux.HandleFunc("DELETE /api/v1/auth/delete", authHandler.DeleteByCredentialsHandler)
 
 	server := &http.Server{
 		Addr:         ":8080",

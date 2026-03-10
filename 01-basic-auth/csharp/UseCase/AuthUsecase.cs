@@ -53,4 +53,12 @@ public class AuthUsecase
     {
         await _userRepository.DeleteAsync(id);
     }
+
+    // DeleteByCredentialsAsync — проверяет email+пароль и удаляет пользователя.
+    // Повторно использует LoginAsync, чтобы не дублировать логику проверки пароля.
+    public async Task DeleteByCredentialsAsync(string email, string password)
+    {
+        var user = await LoginAsync(email, password);
+        await DeleteUserByIdAsync(user.Id);
+    }
 }

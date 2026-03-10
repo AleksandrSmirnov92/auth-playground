@@ -27,7 +27,8 @@ func NewAuthUsecase(userRepository domain.UserRepository) *AuthUsecase {
 
 // Register создаёт нового пользователя:
 // - проверяет, что email ещё не занят
-// - хеширует пароль bcrypt'ом
+// - хеширует пароль bcrypt'ом (GenerateFromPassword)
+//   (bcrypt берёт «сырой» пароль и возвращает строку-хеш; по хешу нельзя восстановить пароль)
 // - сохраняет пользователя в репозиторий
 func (u *AuthUsecase) Register(email, password string) (*domain.User, error) {
 	existingUser, err := u.userRepository.GetByEmail(email)
@@ -55,7 +56,11 @@ func (u *AuthUsecase) Register(email, password string) (*domain.User, error) {
 }
 
 // Login проверяет credentials (email + password).
-// Возвращает одинаковую ошибку для "нет такого email" и "неверный пароль",
+// Для проверки bcrypt использует CompareHashAndPassword:
+//   - на вход: сохранённый хеш (user.Password) и введённый пароль
+//   - внутри хешируется введённый пароль тем же алгоритмом и сравнивается с хешем
+//   - если хотя бы что-то не совпало — возвращается ошибка.
+// Возвращаем одинаковую ошибку для "нет такого email" и "неверный пароль",
 // чтобы не помогать атакующему угадывать существующие email (user enumeration).
 func (u *AuthUsecase) Login(email, password string) (*domain.User, error) {
 	user, err := u.userRepository.GetByEmail(email)
@@ -78,10 +83,23 @@ func (u *AuthUsecase) GetUserByID(id string) (*domain.User, error) {
 }
 
 // DeleteUserById удаляет пользователя по ID.
+// В текущем API вызывается из DeleteByCredentials:
+// сначала мы находим пользователя по email+паролю (Login),
+// затем удаляем его по ID через этот метод.
 func (u *AuthUsecase) DeleteUserById(id string) error {
 	err := u.userRepository.Delete(id)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+// DeleteByCredentials удаляет пользователя по email+password.
+// Удобно для DELETE /api/v1/auth/delete с телом запроса.
+func (u *AuthUsecase) DeleteByCredentials(email, password string) error {
+	user, err := u.Login(email, password)
+	if err != nil {
+		return err
+	}
+	return u.DeleteUserById(user.ID)
 }

@@ -1,19 +1,26 @@
-using BasicAuth.UseCase;
+using System.Text.Json.Serialization;
 using BasicAuth.Delivery.Contracts;
+using BasicAuth.UseCase;
 
 namespace BasicAuth.Delivery;
 
-// AuthEndpoints — описание HTTP API (Delivery слой) в виде Minimal API endpoints.
+// AuthEndpoints — маппинг URL → обработчик (Delivery / Minimal API слой).
 //
-// Зачем:
-// - держим маппинг URL → обработчик в одном месте
-// - обработчики вызывают UseCase и возвращают HTTP-ответы
+// Контракт API (все body — JSON):
+//   POST   /api/v1/auth/register  { email, password }  → 201 AuthResponse
+//   POST   /api/v1/auth/login     { email, password }  → 200 AuthResponse
+//   DELETE /api/v1/auth/delete    { email, password }  → 200 { message }
+//
+// Basic Auth middleware больше не используется — каждый запрос самодостаточен.
 public static class AuthEndpoints
 {
     public static void MapAuthEndpoints(this IEndpointRouteBuilder app, AuthUsecase authUsecase)
     {
         app.MapGet("/health", () => Results.Json(new { status = "ok" }));
 
+        // POST /api/v1/auth/register
+        // Принимает email + password, хеширует пароль и сохраняет пользователя.
+        // 201 — пользователь создан; 409 — уже существует; 400 — пустые поля.
         app.MapPost("/api/v1/auth/register", async (RegisterRequest req) =>
         {
             if (string.IsNullOrEmpty(req.Email) || string.IsNullOrEmpty(req.Password))
@@ -22,7 +29,11 @@ public static class AuthEndpoints
             try
             {
                 var user = await authUsecase.RegisterAsync(req.Email, req.Password);
-                return Results.Created("/api/v1/auth/me", new UserResponse(user.Id, user.Email, user.CreatedAt));
+                var response = new AuthResponse(
+                    "Пользователь успешно зарегистрирован",
+                    new UserResponse(user.Id, user.Email, user.CreatedAt)
+                );
+                return Results.Created("/api/v1/auth/register", response);
             }
             catch (InvalidOperationException ex) when (ex.Message == "user already exists")
             {
@@ -36,31 +47,65 @@ public static class AuthEndpoints
         .WithName("Register")
         .Accepts<RegisterRequest>("application/json");
 
-        app.MapGet("/api/v1/auth/me", async (HttpContext ctx) =>
+        // POST /api/v1/auth/login
+        // Принимает email + password, проверяет через BCrypt.
+        // 200 — вход выполнен; 401 — неверные данные.
+        app.MapPost("/api/v1/auth/login", async (RegisterRequest req) =>
         {
-            var userId = ctx.Items["UserId"] as string;
-            if (string.IsNullOrEmpty(userId))
-                return Results.Json(new { error = "unauthorized" }, statusCode: 401);
+            if (string.IsNullOrEmpty(req.Email) || string.IsNullOrEmpty(req.Password))
+                return Results.BadRequest(new { error = "email and password required" });
 
-            var user = await authUsecase.GetUserByIdAsync(userId);
-            if (user == null)
-                return Results.NotFound(new { error = "user not found" });
-
-            return Results.Json(new UserResponse(user.Id, user.Email, user.CreatedAt));
+            try
+            {
+                var user = await authUsecase.LoginAsync(req.Email, req.Password);
+                var response = new AuthResponse(
+                    "Добро пожаловать!",
+                    new UserResponse(user.Id, user.Email, user.CreatedAt)
+                );
+                return Results.Json(response);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Results.Json(new { error = "invalid email or password" }, statusCode: 401);
+            }
+            catch (Exception ex)
+            {
+                return Results.Json(new { error = ex.Message }, statusCode: 500);
+            }
         })
-        .WithName("Me");
+        .WithName("Login")
+        .Accepts<RegisterRequest>("application/json");
 
-        app.MapDelete("/api/v1/auth/me", async (HttpContext ctx) =>
+        // DELETE /api/v1/auth/delete
+        // Принимает email + password — проверяет личность и удаляет аккаунт.
+        // 200 — удалён; 401 — неверные данные.
+        app.MapDelete("/api/v1/auth/delete", async (RegisterRequest req) =>
         {
-            var userId = ctx.Items["UserId"] as string;
-            if (string.IsNullOrEmpty(userId))
-                return Results.Json(new { error = "unauthorized" }, statusCode: 401);
+            if (string.IsNullOrEmpty(req.Email) || string.IsNullOrEmpty(req.Password))
+                return Results.BadRequest(new { error = "email and password required" });
 
-            await authUsecase.DeleteUserByIdAsync(userId);
-            return Results.NoContent();
+            try
+            {
+                await authUsecase.DeleteByCredentialsAsync(req.Email, req.Password);
+                return Results.Json(new { message = "Пользователь успешно удалён" });
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Results.Json(new { error = "invalid email or password" }, statusCode: 401);
+            }
+            catch (Exception ex)
+            {
+                return Results.Json(new { error = ex.Message }, statusCode: 500);
+            }
         })
-        .WithName("DeleteUser");
+        .WithName("DeleteUser")
+        .Accepts<RegisterRequest>("application/json");
     }
 }
 
-public record RegisterRequest(string Email, string Password);
+// RegisterRequest — тело запросов register / login / delete.
+// Email и Password приходят в JSON-теле (не в заголовке).
+public record RegisterRequest(
+    [property: JsonPropertyName("email")]    string Email,
+    [property: JsonPropertyName("password")] string Password
+);

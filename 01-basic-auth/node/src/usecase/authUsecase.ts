@@ -58,4 +58,11 @@ export class AuthUsecase {
   async deleteUserById(id: string): Promise<void> {
     await this.userRepository.delete(id);
   }
+
+  // deleteByCredentials — проверяет email+пароль и удаляет пользователя.
+  // Повторно использует login(), чтобы не дублировать логику bcrypt.
+  async deleteByCredentials(email: string, password: string): Promise<void> {
+    const user = await this.login(email, password);
+    await this.deleteUserById(user.id);
+  }
 }

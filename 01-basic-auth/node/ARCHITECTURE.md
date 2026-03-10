@@ -17,7 +17,7 @@
 
 ## Обзор проекта
 
-Реализация **HTTP Basic Authentication** (RFC 7617) на **Node.js / TypeScript** (Express). Клиент передаёт логин и пароль в заголовке `Authorization` в каждом запросе. Регистрация — по JSON (email + password); доступ к `/me` и удаление аккаунта — только с Basic Auth. Пароли хешируются через bcrypt.
+Пример аутентификации по **email + паролю** на **Node.js / TypeScript** (Express) без сессий и токенов. Клиент передаёт email и пароль в JSON-теле запросов `/api/v1/auth/register`, `/api/v1/auth/login` и `/api/v1/auth/delete`. Пароли хешируются через bcrypt. Файл `delivery/middleware/basicAuth.ts` оставлен как учебный пример Basic Auth и в текущем API не используется.
 
 ### Структура файлов (Node.js / TypeScript)
 

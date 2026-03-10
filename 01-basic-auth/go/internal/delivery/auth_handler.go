@@ -7,7 +7,6 @@ package delivery
 // - вызывают бизнес-логику (UseCase)
 // - формируют HTTP-ответ (status code + JSON)
 import (
-	"basic-auth/internal/delivery/middleware"
 	"basic-auth/internal/usecase"
 	"encoding/json"
 	"net/http"
@@ -27,8 +26,13 @@ type RegisterRequest struct {
 	Password string `json:"password"`
 }
 
+type AuthResponse struct {
+	Message string      `json:"message"`
+	User    interface{} `json:"user,omitempty"`
+}
+
 // RegisterHandler — публичный endpoint регистрации.
-// При успехе возвращает 201 Created и пользователя (без password).
+// При успехе возвращает 201 Created и сообщение.
 func (h *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	var req RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -39,50 +43,64 @@ func (h *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	user, err := h.authUsecase.Register(req.Email, req.Password)
 	if err != nil {
 		if err.Error() == "user already exists" {
-			http.Error(w, err.Error(), http.StatusConflict)
+			http.Error(w, "user already exists", http.StatusConflict)
 			return
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(user)
+	resp := AuthResponse{
+		Message: "Пользователь успешно зарегистрирован",
+		User:    user,
+	}
+	json.NewEncoder(w).Encode(resp)
 }
 
-// MeHandler — защищённый endpoint "кто я".
-// user_id берётся из context: туда его положил Basic Auth middleware после успешной проверки.
-func (h *AuthHandler) MeHandler(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
+// LoginHandler — простая авторизация по email+password.
+func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
+	var req RegisterRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	user, err := h.authUsecase.GetUserByID(userID)
+	user, err := h.authUsecase.Login(req.Email, req.Password)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		http.Error(w, "invalid email or password", http.StatusUnauthorized)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	resp := AuthResponse{
+		Message: "Пользователь успешно вошёл",
+		User:    user,
+	}
+	json.NewEncoder(w).Encode(resp)
 }
 
-// DeleteUserHandler — защищённый endpoint удаления своего аккаунта.
-func (h *AuthHandler) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(middleware.UserIDKey).(string)
-	if !ok || userID == "" {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
+// DeleteByCredentialsHandler — удаление пользователя по email+password.
+func (h *AuthHandler) DeleteByCredentialsHandler(w http.ResponseWriter, r *http.Request) {
+	var req RegisterRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err := h.authUsecase.DeleteUserById(userID)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := h.authUsecase.DeleteByCredentials(req.Email, req.Password); err != nil {
+		if err.Error() == "invalid email or password" {
+			http.Error(w, "invalid email or password", http.StatusUnauthorized)
+			return
+		}
+		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	w.Header().Set("Content-Type", "application/json")
+	resp := map[string]string{
+		"message": "Пользователь успешно удалён",
+	}
+	json.NewEncoder(w).Encode(resp)
 }
