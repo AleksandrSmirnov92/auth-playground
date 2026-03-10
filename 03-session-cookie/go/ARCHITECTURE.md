@@ -26,7 +26,7 @@
 ### Планируемая структура файлов
 
 ```
-03-session-cookie/
+03-session-cookie/go/
 ├── cmd/server/main.go
 ├── internal/
 │   ├── domain/
@@ -132,4 +132,4 @@ Domain: User, Session, интерфейсы UserRepository и SessionRepository.
 
 **Планируется:** серверные сессии, cookie с session_id, Login (Set-Cookie), Logout (удаление сессии и сброс cookie), middleware по cookie. После реализации — подставить актуальный код и диаграммы.
 
-**Следующий проект:** [04-jwt-bearer](../04-jwt-bearer/) — JWT Bearer Token (stateless).
+**Следующий проект (Go):** [04-jwt-bearer](../../04-jwt-bearer/go/ARCHITECTURE.md) — JWT Bearer Token (stateless).

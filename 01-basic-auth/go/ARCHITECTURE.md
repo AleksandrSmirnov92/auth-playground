@@ -1,4 +1,4 @@
-# Архитектура: 01 — Basic Auth (Base64)
+# Архитектура: 01 — Basic Auth (Base64) — Go
 
 ## Содержание
 
@@ -19,12 +19,12 @@
 
 ## Обзор проекта
 
-Этот мини-проект реализует **HTTP Basic Authentication** (RFC 7617): клиент передаёт логин и пароль в заголовке `Authorization` в каждом запросе к защищённым эндпоинтам. Регистрация — по JSON (email + password); доступ к `/me` и удаление аккаунта — только с Basic Auth. Пароли хранятся в виде bcrypt-хеша.
+Этот мини-проект реализует **HTTP Basic Authentication** (RFC 7617) на **Go**: клиент передаёт логин и пароль в заголовке `Authorization` в каждом запросе к защищённым эндпоинтам. Регистрация — по JSON (email + password); доступ к `/me` и удаление аккаунта — только с Basic Auth. Пароли хранятся в виде bcrypt-хеша.
 
-### Структура файлов
+### Структура файлов (Go)
 
 ```
-01-basic-auth/
+01-basic-auth/go/
 ├── cmd/
 │   └── server/
 │       └── main.go                          # Точка входа приложения
@@ -40,7 +40,7 @@
 │   └── delivery/
 │       ├── auth_handler.go                  # HTTP handlers
 │       └── middleware/
-│           └── auth.go                       # Basic Auth middleware
+│           └── auth.go                      # Basic Auth middleware
 ├── go.mod
 └── go.sum
 ```
@@ -122,7 +122,7 @@ mux.Handle("DELETE /api/v1/auth/me", basicAuthMiddleware(http.HandlerFunc(authHa
 
 #### 4. HTTP Server и Graceful Shutdown
 
-Как в корневом проекте: таймауты (ReadTimeout, WriteTimeout, IdleTimeout), запуск сервера в goroutine, ожидание SIGINT, `Shutdown(ctx)` с таймаутом 10 секунд.
+Таймауты (ReadTimeout, WriteTimeout, IdleTimeout), запуск сервера в goroutine, ожидание SIGINT, `Shutdown(ctx)` с таймаутом 10 секунд.
 
 ---
 
@@ -209,14 +209,6 @@ In-memory реализация: `map[string]*domain.User`, защита `sync.RW
 
 **Register:** проверка существования по email, генерация bcrypt-хеша пароля, создание User с UUID, сохранение в repository.
 
-**Зачем bcrypt в Register:**
-
-```go
-hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-```
-
-Пароли не хранятся в открытом виде; при утечке БД хеши не дают восстановить пароль. bcrypt — адаптивный алгоритм (замедляет перебор).
-
 **Login:** поиск пользователя по email, проверка пароля через `bcrypt.CompareHashAndPassword`. Одинавое сообщение при «user not found» и «wrong password» — защита от user enumeration.
 
 **GetUserByID, DeleteUserById:** передача вызова в repository.
@@ -231,75 +223,15 @@ hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.Defa
 - **MeHandler:** достаёт `user_id` из `r.Context().Value(middleware.UserIDKey)` — его положил middleware после успешной Basic Auth; вызывает GetUserByID, отдаёт 200 и user или 401/404.
 - **DeleteUserHandler:** так же берёт user_id из context, вызывает DeleteUserById, возвращает 204.
 
-**Зачем user_id из context:** защищённые роуты не принимают user_id в query/body — только через middleware, чтобы нельзя было подделать запрос от другого пользователя.
-
 ### middleware/auth.go — Basic Auth
 
-```go
-func BasicAuth(authUsecase *usecase.AuthUsecase) func(http.Handler) http.Handler {
-    return func(next http.Handler) http.Handler {
-        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-            email, password, ok := r.BasicAuth()
-            if !ok {
-                w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
-                http.Error(w, "Authorization required", http.StatusUnauthorized)
-                return
-            }
-
-            user, err := authUsecase.Login(email, password)
-            if err != nil {
-                w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
-                http.Error(w, "Invalid credentials", http.StatusUnauthorized)
-                return
-            }
-
-            ctx := context.WithValue(r.Context(), UserIDKey, user.ID)
-            next.ServeHTTP(w, r.WithContext(ctx))
-        })
-    }
-}
-```
-
-**Что делает:** `r.BasicAuth()` декодирует заголовок `Authorization: Basic ...` в email и password. Если заголовка нет или логин/пароль неверны — 401 и заголовок `WWW-Authenticate` (по стандарту браузер может показать форму ввода). При успешном Login кладём user.ID в context и вызываем следующий handler.
+`r.BasicAuth()` декодирует заголовок `Authorization: Basic ...` в email и password. Если заголовка нет или логин/пароль неверны — 401 и заголовок `WWW-Authenticate`. При успешном Login кладём user.ID в context и вызываем следующий handler.
 
 ---
 
 ## Полный Flow запроса
 
-### Пример: GET /api/v1/auth/me с Basic Auth
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant Client
-    participant Main
-    participant Middleware
-    participant UseCase
-    participant Repo
-    participant Handler
-
-    Client->>Main: GET /me<br/>Authorization: Basic base64(email:password)
-    Main->>Middleware: BasicAuth middleware
-
-    Middleware->>Middleware: r.BasicAuth() -> email, password
-    Middleware->>UseCase: Login(email, password)
-    UseCase->>Repo: GetByEmail(email)
-    Repo-->>UseCase: user
-    UseCase->>UseCase: bcrypt.CompareHashAndPassword
-    UseCase-->>Middleware: user
-
-    Middleware->>Middleware: context.WithValue(UserIDKey, user.ID)
-    Middleware->>Handler: MeHandler(r.WithContext(ctx))
-
-    Handler->>Handler: userID from context
-    Handler->>UseCase: GetUserByID(userID)
-    UseCase->>Repo: GetByID(userID)
-    Repo-->>UseCase: user
-    UseCase-->>Handler: user
-    Handler-->>Client: 200 OK {id, email, created_at}
-```
-
-По шагам: клиент отправляет GET с Basic Auth; middleware парсит заголовок, вызывает Login (GetByEmail + bcrypt), при успехе кладёт user_id в context и передаёт управление MeHandler; handler читает user_id из context, запрашивает user и отдаёт JSON.
+Клиент отправляет GET с Basic Auth; middleware парсит заголовок, вызывает Login (GetByEmail + bcrypt), при успехе кладёт user_id в context и передаёт управление MeHandler; handler читает user_id из context, запрашивает user и отдаёт JSON.
 
 ---
 
@@ -321,4 +253,4 @@ sequenceDiagram
 
 **Реализовано:** Basic Auth (RFC 7617), bcrypt для паролей, разделение публичных и защищённых роутов, middleware с передачей user_id через context, Clean Architecture с domain/use case/repository/delivery.
 
-**Следующий проект в коллекции:** [02-api-key](../02-api-key/) — авторизация по заголовку X-API-Key.
+**Следующий проект (Go):** [02-api-key](../../02-api-key/go/ARCHITECTURE.md) — авторизация по заголовку X-API-Key.

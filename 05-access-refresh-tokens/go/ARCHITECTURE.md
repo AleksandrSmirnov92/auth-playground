@@ -26,7 +26,7 @@
 ### Планируемая структура файлов
 
 ```
-05-access-refresh-tokens/
+05-access-refresh-tokens/go/
 ├── cmd/server/main.go
 ├── internal/
 │   ├── domain/
@@ -132,4 +132,4 @@ Domain: User, сущность/хранилище для refresh token (token_id
 
 **Планируется:** короткоживущий access JWT, долгоживущий refresh token с хранением на сервере, endpoint POST /refresh, middleware только по access token. После реализации — подставить актуальный код и диаграммы.
 
-**Следующий проект:** [06-oauth2](../06-oauth2/) — OAuth 2.0 (Google/GitHub).
+**Следующий проект (Go):** [06-oauth2](../../06-oauth2/go/ARCHITECTURE.md) — OAuth 2.0 (Google/GitHub).

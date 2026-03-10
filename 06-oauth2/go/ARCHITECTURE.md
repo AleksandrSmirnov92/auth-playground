@@ -26,7 +26,7 @@
 ### Планируемая структура файлов
 
 ```
-06-oauth2/
+06-oauth2/go/
 ├── cmd/server/main.go
 ├── internal/
 │   ├── domain/
@@ -130,4 +130,4 @@ OAuth-клиент (обмен code, UserInfo) — в пакете или delive
 
 **Планируется:** OAuth 2.0 Authorization Code с Google/GitHub, redirect и callback, получение профиля, GetOrCreateUserByOAuth, выдача нашей сессии/JWT для доступа к API. После реализации — подставить актуальный код и диаграммы.
 
-**Следующий проект:** [07-sso-oidc](../07-sso-oidc/) — SSO / OpenID Connect.
+**Следующий проект (Go):** [07-sso-oidc](../../07-sso-oidc/go/ARCHITECTURE.md) — SSO / OpenID Connect.

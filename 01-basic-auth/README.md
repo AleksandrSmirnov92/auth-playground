@@ -88,20 +88,19 @@ curl -X DELETE -u user@example.com:secret123 http://localhost:8080/api/v1/auth/m
 ```
 01-basic-auth/
 ├── go/                     # Реализация на Go
+│   ├── ARCHITECTURE.md     # Подробная архитектура (Go)
 │   ├── cmd/server/main.go
-│   ├── internal/           # domain, usecase, delivery, repository
-│   ├── go.mod
-│   └── ...
+│   ├── internal/
+│   └── go.mod
 ├── node/                   # Реализация на Node.js / TypeScript
+│   ├── ARCHITECTURE.md     # Подробная архитектура (Node)
 │   ├── src/
-│   ├── package.json
-│   └── ...
+│   └── package.json
 ├── csharp/                 # Реализация на C# .NET
+│   ├── ARCHITECTURE.md     # Подробная архитектура (C#)
 │   ├── Domain/
 │   ├── UseCase/
-│   ├── Delivery/
-│   └── ...
-├── ARCHITECTURE.md
+│   └── Delivery/
 └── README.md
 ```
 
