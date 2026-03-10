@@ -22,3 +22,6 @@ obj/
 
 # Cursor
 *.plan.md
+
+# AI (local)
+AI_CONTEXT_PLAN.md
