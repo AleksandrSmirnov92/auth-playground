@@ -3,6 +3,12 @@ import { UserRepository } from '../domain/repository';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 
+export type PublicUser = {
+  id: string;
+  email: string;
+  created_at: string; // ISO datetime string
+};
+
 /**
  * AuthUsecase — бизнес-логика авторизации (UseCase слой).
  *
@@ -13,7 +19,7 @@ import { v4 as uuidv4 } from 'uuid';
 export class AuthUsecase {
   constructor(private userRepository: UserRepository) {}
 
-  async register(email: string, password: string): Promise<Omit<User, 'password'>> {
+  async register(email: string, password: string): Promise<PublicUser> {
     const existing = await this.userRepository.getByEmail(email);
     if (existing) {
       throw new Error('user already exists');
@@ -28,8 +34,7 @@ export class AuthUsecase {
     };
 
     await this.userRepository.create(user);
-    const { password: _, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    return { id: user.id, email: user.email, created_at: user.createdAt.toISOString() };
   }
 
   async login(email: string, password: string): Promise<User> {
@@ -44,11 +49,10 @@ export class AuthUsecase {
     return user;
   }
 
-  async getUserById(id: string): Promise<Omit<User, 'password'> | null> {
+  async getUserById(id: string): Promise<PublicUser | null> {
     const user = await this.userRepository.getById(id);
     if (!user) return null;
-    const { password: _, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    return { id: user.id, email: user.email, created_at: user.createdAt.toISOString() };
   }
 
   async deleteUserById(id: string): Promise<void> {

@@ -31,8 +31,7 @@ class AuthUsecase {
             createdAt: new Date(),
         };
         await this.userRepository.create(user);
-        const { password: _, ...userWithoutPassword } = user;
-        return userWithoutPassword;
+        return { id: user.id, email: user.email, created_at: user.createdAt.toISOString() };
     }
     async login(email, password) {
         const user = await this.userRepository.getByEmail(email);
@@ -49,8 +48,7 @@ class AuthUsecase {
         const user = await this.userRepository.getById(id);
         if (!user)
             return null;
-        const { password: _, ...userWithoutPassword } = user;
-        return userWithoutPassword;
+        return { id: user.id, email: user.email, created_at: user.createdAt.toISOString() };
     }
     async deleteUserById(id) {
         await this.userRepository.delete(id);

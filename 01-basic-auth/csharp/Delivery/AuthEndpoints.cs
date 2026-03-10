@@ -1,4 +1,5 @@
 using BasicAuth.UseCase;
+using BasicAuth.Delivery.Contracts;
 
 namespace BasicAuth.Delivery;
 
@@ -21,7 +22,7 @@ public static class AuthEndpoints
             try
             {
                 var user = await authUsecase.RegisterAsync(req.Email, req.Password);
-                return Results.Created("/api/v1/auth/me", user);
+                return Results.Created("/api/v1/auth/me", new UserResponse(user.Id, user.Email, user.CreatedAt));
             }
             catch (InvalidOperationException ex) when (ex.Message == "user already exists")
             {
@@ -45,7 +46,7 @@ public static class AuthEndpoints
             if (user == null)
                 return Results.NotFound(new { error = "user not found" });
 
-            return Results.Json(user);
+            return Results.Json(new UserResponse(user.Id, user.Email, user.CreatedAt));
         })
         .WithName("Me");
 

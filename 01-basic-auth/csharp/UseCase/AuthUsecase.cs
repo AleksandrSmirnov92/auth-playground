@@ -16,7 +16,7 @@ public class AuthUsecase
         _userRepository = userRepository;
     }
 
-    public async Task<object> RegisterAsync(string email, string password)
+    public async Task<User> RegisterAsync(string email, string password)
     {
         var existing = await _userRepository.GetByEmailAsync(email);
         if (existing != null)
@@ -32,7 +32,7 @@ public class AuthUsecase
         };
 
         await _userRepository.CreateAsync(user);
-        return new { user.Id, user.Email, user.CreatedAt };
+        return user;
     }
 
     public async Task<User> LoginAsync(string email, string password)
@@ -43,10 +43,10 @@ public class AuthUsecase
         return user;
     }
 
-    public async Task<object?> GetUserByIdAsync(string id)
+    public async Task<User?> GetUserByIdAsync(string id)
     {
         var user = await _userRepository.GetByIdAsync(id);
-        return user == null ? null : new { user.Id, user.Email, user.CreatedAt };
+        return user;
     }
 
     public async Task DeleteUserByIdAsync(string id)

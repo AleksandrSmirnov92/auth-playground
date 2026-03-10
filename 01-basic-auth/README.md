@@ -1,5 +1,13 @@
 # 01 - Basic Auth (Base64)
 
+**Быстрый старт:**
+
+- **Go:** `cd 01-basic-auth/go && go run cmd/server/main.go`
+- **Node.js:** `cd 01-basic-auth/node && npm install && npm run dev`
+- **C# .NET:** `cd 01-basic-auth/csharp && dotnet run`
+
+**Swagger:** открой `http://localhost:8080/swagger`
+
 HTTP Basic Authentication — простейший стандарт авторизации (RFC 7617).
 
 Клиент передаёт `email:password` в заголовке `Authorization`, закодированные в Base64.
