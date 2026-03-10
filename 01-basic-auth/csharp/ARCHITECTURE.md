@@ -42,6 +42,11 @@
 
 ---
 
+## Swagger / OpenAPI (удобно для тестирования)
+
+- Swagger UI: `http://localhost:8080/swagger`
+- OpenAPI JSON (Swashbuckle): `http://localhost:8080/swagger/v1/swagger.json`
+
 ## Basic Auth: как это работает
 
 **RFC 7617:** клиент кодирует `email:password` в Base64 и отправляет:

@@ -23,6 +23,7 @@
 
 ```
 01-basic-auth/node/
+├── openapi.json                         # OpenAPI спецификация (для Swagger UI)
 ├── src/
 │   ├── index.ts                           # Точка входа, DI, роуты
 │   ├── domain/
@@ -42,6 +43,11 @@
 ```
 
 ---
+
+## Swagger / OpenAPI (удобно для тестирования)
+
+- Swagger UI: `http://localhost:8080/swagger`
+- OpenAPI JSON: `http://localhost:8080/openapi.json`
 
 ## Basic Auth: как это работает
 

@@ -134,6 +134,8 @@ basicAuthMiddleware := middleware.BasicAuth(authUsecase)
 ```go
 // Public routes
 mux.HandleFunc("/health", healthHandler)
+mux.HandleFunc("/swagger", swaggerUIHandler)
+mux.HandleFunc("/openapi.json", openAPIHandler)
 mux.HandleFunc("POST /api/v1/auth/register", authHandler.RegisterHandler)
 
 // Protected routes (require Basic Auth header)
@@ -141,7 +143,14 @@ mux.Handle("GET /api/v1/auth/me", basicAuthMiddleware(http.HandlerFunc(authHandl
 mux.Handle("DELETE /api/v1/auth/me", basicAuthMiddleware(http.HandlerFunc(authHandler.DeleteUserHandler)))
 ```
 
-**Зачем:** разделение на публичные (без авторизации) и защищённые роуты. Для защищённых **оборачиваем** handler в `basicAuthMiddleware`: при запросе на GET/DELETE `/api/v1/auth/me` сначала вызывается middleware — он проверяет заголовок Basic Auth и только при успехе передаёт управление MeHandler/DeleteUserHandler. Если middleware вернёт 401, handler вообще не вызывается. Отдельного `POST /login` нет — «вход» проверяется при каждом запросе к защищённому пути через заголовок.
+**Зачем:** разделение на публичные (без авторизации) и защищённые роуты.
+
+- Публичные: `/health`, `/swagger`, `/openapi.json`, `POST /api/v1/auth/register`
+  - `/swagger` — Swagger UI (страница в браузере для просмотра документации и отправки запросов)
+  - `/openapi.json` — OpenAPI-спецификация (её читает Swagger UI)
+- Защищённые: `GET/DELETE /api/v1/auth/me`
+
+Для защищённых **оборачиваем** handler в `basicAuthMiddleware`: при запросе на GET/DELETE `/api/v1/auth/me` сначала вызывается middleware — он проверяет заголовок Basic Auth и только при успехе передаёт управление MeHandler/DeleteUserHandler. Если middleware вернёт 401, handler вообще не вызывается. Отдельного `POST /login` нет — «вход» проверяется при каждом запросе к защищённому пути через заголовок.
 
 #### 4. HTTP Server и Graceful Shutdown
 

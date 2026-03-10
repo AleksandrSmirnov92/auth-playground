@@ -2,6 +2,14 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createAuthHandler = createAuthHandler;
 const basicAuth_1 = require("./middleware/basicAuth");
+/**
+ * HTTP handlers (Delivery слой) для Express.
+ *
+ * Handler'ы:
+ * - читают данные запроса (body, userId из middleware)
+ * - вызывают use case
+ * - формируют HTTP-ответ (статус + JSON)
+ */
 function createAuthHandler(authUsecase) {
     return {
         async register(req, res) {

@@ -13,10 +13,12 @@ import (
 	"basic-auth/internal/usecase"
 	"context"
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"time"
 )
 
@@ -25,6 +27,54 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+}
+
+// swaggerUIHandler отдаёт простую Swagger UI страницу (без зависимостей),
+// которая берёт OpenAPI JSON из /openapi.json.
+func swaggerUIHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	io.WriteString(w, `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Swagger UI</title>
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+    <script>
+      window.onload = () => {
+        SwaggerUIBundle({ url: '/openapi.json', dom_id: '#swagger-ui' });
+      };
+    </script>
+  </body>
+</html>`)
+}
+
+// openAPIHandler отдаёт OpenAPI спецификацию (openapi.json) из директории проекта.
+func openAPIHandler(w http.ResponseWriter, r *http.Request) {
+	// Файл лежит рядом с go.mod в корне реализации: 01-basic-auth/go/openapi.json
+	exe, err := os.Executable()
+	if err != nil {
+		http.Error(w, "failed to locate executable", http.StatusInternalServerError)
+		return
+	}
+	// При go run executable лежит во временной папке, поэтому идём от текущей директории процесса.
+	wd, err := os.Getwd()
+	if err != nil {
+		wd = filepath.Dir(exe)
+	}
+	specPath := filepath.Join(wd, "openapi.json")
+	data, err := os.ReadFile(specPath)
+	if err != nil {
+		http.Error(w, "openapi.json not found", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
 }
 
 func main() {
@@ -44,6 +94,8 @@ func main() {
 
 	// Public routes
 	mux.HandleFunc("/health", healthHandler)
+	mux.HandleFunc("/swagger", swaggerUIHandler)
+	mux.HandleFunc("/openapi.json", openAPIHandler)
 	mux.HandleFunc("POST /api/v1/auth/register", authHandler.RegisterHandler)
 
 	// Protected routes (require Basic Auth header)

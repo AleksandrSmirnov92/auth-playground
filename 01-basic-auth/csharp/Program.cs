@@ -22,11 +22,9 @@ var app = builder.Build();
 var authUsecase = app.Services.GetRequiredService<AuthUsecase>();
 app.UseMiddleware<BasicAuthMiddleware>(authUsecase);
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// Swagger/OpenAPI включаем всегда (удобно для тестирования учебных проектов).
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.MapAuthEndpoints(authUsecase);
 

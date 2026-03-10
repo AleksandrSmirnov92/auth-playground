@@ -6,6 +6,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthUsecase = void 0;
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const uuid_1 = require("uuid");
+/**
+ * AuthUsecase — бизнес-логика авторизации (UseCase слой).
+ *
+ * Здесь нет HTTP и Express: только правила приложения:
+ * - register: проверка уникальности email + bcrypt hash + сохранение
+ * - login: проверка email + bcrypt compare
+ */
 class AuthUsecase {
     userRepository;
     constructor(userRepository) {

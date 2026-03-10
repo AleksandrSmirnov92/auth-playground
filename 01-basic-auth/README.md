@@ -31,6 +31,8 @@ Client                              Server
 | GET | `/api/v1/auth/me` | Basic | Получить профиль текущего пользователя |
 | DELETE | `/api/v1/auth/me` | Basic | Удалить текущего пользователя |
 | GET | `/health` | Нет | Проверка работоспособности сервера |
+| GET | `/swagger` | Нет | Swagger UI (документация и тестирование API) |
+| GET | `/openapi.json` | Нет | OpenAPI спецификация (для Swagger UI) |
 
 ## Запуск
 
@@ -55,6 +57,13 @@ npm run build && npm start
 cd 01-basic-auth/csharp
 dotnet run
 ```
+
+## Swagger / OpenAPI (удобно для тестирования)
+
+После запуска сервера открой в браузере:
+
+- **Swagger UI**: `http://localhost:8080/swagger`
+- **OpenAPI JSON**: `http://localhost:8080/openapi.json`
 
 ## Примеры curl
 
