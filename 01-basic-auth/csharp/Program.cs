@@ -3,6 +3,7 @@ using BasicAuth.Domain;
 using BasicAuth.Repository;
 using BasicAuth.UseCase;
 using BasicAuth.Delivery.Middleware;
+using BasicAuth.Delivery.Swagger;
 
 // Entry point (C# / ASP.NET Core).
 //
@@ -15,7 +16,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<IUserRepository, MemoryUserRepository>();
 builder.Services.AddSingleton<AuthUsecase>();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SchemaFilter<ExamplesSchemaFilter>();
+});
 
 var app = builder.Build();
 

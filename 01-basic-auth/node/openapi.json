@@ -6,7 +6,9 @@
     "description": "Basic Auth example. Register with email+password, then call /me using HTTP Basic Authentication."
   },
   "servers": [
-    { "url": "http://localhost:8080" }
+    {
+      "url": "http://localhost:8080"
+    }
   ],
   "paths": {
     "/health": {
@@ -19,8 +21,14 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "properties": { "status": { "type": "string" } },
-                  "required": ["status"]
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
                 }
               }
             }
@@ -35,7 +43,9 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/RegisterRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
             }
           }
         },
@@ -44,40 +54,68 @@
             "description": "Created",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/User" }
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
               }
             }
           },
-          "400": { "description": "Bad Request" },
-          "409": { "description": "User already exists" },
-          "500": { "description": "Internal Server Error" }
+          "400": {
+            "description": "Bad Request"
+          },
+          "409": {
+            "description": "User already exists"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
         }
       }
     },
     "/api/v1/auth/me": {
       "get": {
         "summary": "Get current user profile",
-        "security": [{ "basicAuth": [] }],
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/User" }
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
               }
             }
           },
-          "401": { "description": "Unauthorized" },
-          "404": { "description": "Not Found" }
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not Found"
+          }
         }
       },
       "delete": {
         "summary": "Delete current user",
-        "security": [{ "basicAuth": [] }],
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
         "responses": {
-          "204": { "description": "No Content" },
-          "401": { "description": "Unauthorized" },
-          "500": { "description": "Internal Server Error" }
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
         }
       }
     }
@@ -93,21 +131,52 @@
       "RegisterRequest": {
         "type": "object",
         "properties": {
-          "email": { "type": "string", "format": "email" },
-          "password": { "type": "string", "minLength": 1 }
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "ivanov@example.com"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 1,
+            "example": "1234"
+          }
         },
-        "required": ["email", "password"]
+        "required": [
+          "email",
+          "password"
+        ],
+        "example": {
+          "email": "ivanov@example.com",
+          "password": "1234"
+        }
       },
       "User": {
         "type": "object",
         "properties": {
-          "id": { "type": "string" },
-          "email": { "type": "string", "format": "email" },
-          "created_at": { "type": "string", "format": "date-time" }
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
         },
-        "required": ["id", "email", "created_at"]
+        "required": [
+          "id",
+          "email",
+          "created_at"
+        ],
+        "example": {
+          "id": "<uuid>",
+          "email": "ivanov@example.com",
+          "created_at": "2026-03-10T12:00:00Z"
+        }
       }
     }
   }
 }
-
