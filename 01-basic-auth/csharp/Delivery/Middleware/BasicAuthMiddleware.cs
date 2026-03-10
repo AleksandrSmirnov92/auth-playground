@@ -3,6 +3,13 @@ using System.Text;
 
 namespace BasicAuth.Delivery.Middleware;
 
+// BasicAuthMiddleware проверяет HTTP Basic Auth для защищённых эндпоинтов.
+//
+// Что делает:
+// - пропускает публичные пути (например /health и /api/v1/auth/register)
+// - для /api/v1/auth/me читает Authorization: Basic ...
+// - декодирует Base64(email:password) и вызывает AuthUsecase.LoginAsync
+// - при успехе кладёт user.Id в HttpContext.Items["UserId"], чтобы endpoint мог взять его
 public class BasicAuthMiddleware
 {
     private readonly RequestDelegate _next;

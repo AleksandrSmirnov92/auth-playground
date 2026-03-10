@@ -4,6 +4,12 @@ using BasicAuth.Repository;
 using BasicAuth.UseCase;
 using BasicAuth.Delivery.Middleware;
 
+// Entry point (C# / ASP.NET Core).
+//
+// Здесь мы:
+// - регистрируем зависимости (Repository → UseCase)
+// - подключаем Basic Auth middleware для защищённых путей
+// - маппим endpoints и запускаем сервер на 8080
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSingleton<IUserRepository, MemoryUserRepository>();

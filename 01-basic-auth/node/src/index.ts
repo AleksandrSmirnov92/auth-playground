@@ -1,3 +1,11 @@
+/**
+ * Entry point (Node.js / TypeScript).
+ *
+ * Здесь мы:
+ * - создаём зависимости (Repository → UseCase → Delivery)
+ * - подключаем middleware Basic Auth к защищённым роутам
+ * - поднимаем HTTP сервер на порту 8080
+ */
 import express from 'express';
 import { MemoryUserRepository } from './repository/memoryUserRepository';
 import { AuthUsecase } from './usecase/authUsecase';

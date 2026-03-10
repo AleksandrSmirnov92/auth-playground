@@ -2,6 +2,11 @@ using BasicAuth.Domain;
 
 namespace BasicAuth.UseCase;
 
+// AuthUsecase — бизнес-логика авторизации (UseCase слой).
+//
+// Здесь нет HTTP: только правила приложения:
+// - RegisterAsync: email уникален, пароль хешируем (BCrypt), сохраняем пользователя
+// - LoginAsync: проверяем email + пароль (BCrypt.Verify)
 public class AuthUsecase
 {
     private readonly IUserRepository _userRepository;

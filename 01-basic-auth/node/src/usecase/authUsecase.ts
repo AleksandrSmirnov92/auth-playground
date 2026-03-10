@@ -3,6 +3,13 @@ import { UserRepository } from '../domain/repository';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 
+/**
+ * AuthUsecase — бизнес-логика авторизации (UseCase слой).
+ *
+ * Здесь нет HTTP и Express: только правила приложения:
+ * - register: проверка уникальности email + bcrypt hash + сохранение
+ * - login: проверка email + bcrypt compare
+ */
 export class AuthUsecase {
   constructor(private userRepository: UserRepository) {}
 

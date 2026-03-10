@@ -1,6 +1,13 @@
 import { User } from '../domain/user';
 import { UserRepository } from '../domain/repository';
 
+/**
+ * In-memory реализация UserRepository.
+ *
+ * Важно:
+ * - данные живут только в памяти процесса (после перезапуска сервера исчезнут)
+ * - getByEmail делает перебор пользователей (O(n)) — для учебного примера ок
+ */
 export class MemoryUserRepository implements UserRepository {
   private users = new Map<string, User>();
 

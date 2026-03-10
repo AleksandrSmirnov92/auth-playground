@@ -2,6 +2,11 @@ using BasicAuth.Domain;
 
 namespace BasicAuth.Repository;
 
+// In-memory реализация IUserRepository.
+//
+// Важно:
+// - данные живут только в памяти процесса (после перезапуска исчезнут)
+// - GetByEmail использует перебор (O(n)) — для учебного примера достаточно
 public class MemoryUserRepository : IUserRepository
 {
     private readonly Dictionary<string, User> _users = new();

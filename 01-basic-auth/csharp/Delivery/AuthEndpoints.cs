@@ -2,6 +2,11 @@ using BasicAuth.UseCase;
 
 namespace BasicAuth.Delivery;
 
+// AuthEndpoints — описание HTTP API (Delivery слой) в виде Minimal API endpoints.
+//
+// Зачем:
+// - держим маппинг URL → обработчик в одном месте
+// - обработчики вызывают UseCase и возвращают HTTP-ответы
 public static class AuthEndpoints
 {
     public static void MapAuthEndpoints(this IEndpointRouteBuilder app, AuthUsecase authUsecase)

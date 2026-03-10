@@ -1,5 +1,12 @@
 package usecase
 
+// AuthUsecase — бизнес-логика авторизации.
+//
+// Это слой UseCase: тут нет HTTP и нет деталей хранения данных.
+// Он работает через интерфейс domain.UserRepository и решает:
+// - можно ли зарегистрировать пользователя (email уникален)
+// - как захешировать пароль (bcrypt)
+// - как проверить логин/пароль (login)
 import (
 	"basic-auth/internal/domain"
 	"errors"
@@ -13,10 +20,15 @@ type AuthUsecase struct {
 	userRepository domain.UserRepository
 }
 
+// NewAuthUsecase "внедряет" репозиторий в бизнес-логику.
 func NewAuthUsecase(userRepository domain.UserRepository) *AuthUsecase {
 	return &AuthUsecase{userRepository: userRepository}
 }
 
+// Register создаёт нового пользователя:
+// - проверяет, что email ещё не занят
+// - хеширует пароль bcrypt'ом
+// - сохраняет пользователя в репозиторий
 func (u *AuthUsecase) Register(email, password string) (*domain.User, error) {
 	existingUser, err := u.userRepository.GetByEmail(email)
 	if err == nil && existingUser != nil {
@@ -42,6 +54,9 @@ func (u *AuthUsecase) Register(email, password string) (*domain.User, error) {
 	return user, nil
 }
 
+// Login проверяет credentials (email + password).
+// Возвращает одинаковую ошибку для "нет такого email" и "неверный пароль",
+// чтобы не помогать атакующему угадывать существующие email (user enumeration).
 func (u *AuthUsecase) Login(email, password string) (*domain.User, error) {
 	user, err := u.userRepository.GetByEmail(email)
 	if err != nil {
@@ -53,6 +68,7 @@ func (u *AuthUsecase) Login(email, password string) (*domain.User, error) {
 	return user, nil
 }
 
+// GetUserByID возвращает пользователя по ID.
 func (u *AuthUsecase) GetUserByID(id string) (*domain.User, error) {
 	user, err := u.userRepository.GetByID(id)
 	if err != nil {
@@ -61,6 +77,7 @@ func (u *AuthUsecase) GetUserByID(id string) (*domain.User, error) {
 	return user, nil
 }
 
+// DeleteUserById удаляет пользователя по ID.
 func (u *AuthUsecase) DeleteUserById(id string) error {
 	err := u.userRepository.Delete(id)
 	if err != nil {

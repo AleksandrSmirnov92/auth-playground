@@ -2,6 +2,14 @@ import { Request, Response } from 'express';
 import { AuthUsecase } from '../usecase/authUsecase';
 import { USER_ID_KEY } from './middleware/basicAuth';
 
+/**
+ * HTTP handlers (Delivery слой) для Express.
+ *
+ * Handler'ы:
+ * - читают данные запроса (body, userId из middleware)
+ * - вызывают use case
+ * - формируют HTTP-ответ (статус + JSON)
+ */
 export function createAuthHandler(authUsecase: AuthUsecase) {
   return {
     async register(req: Request, res: Response) {
